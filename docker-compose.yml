@@ -2,12 +2,27 @@ version: '3.1'
 
 services:
 
+  unittest:
+    container_name: unittest
+    build:
+      context: .
+      dockerfile: Dockerfile.integration.test
+    command: ["-c", "sleep infinity"]
+    depends_on:
+      revproxyinjector:
+        condition: service_healthy
+
   revproxyinjector:
     container_name: revproxyinjector
     build:
       context: .
       dockerfile: Dockerfile.integration.test
     command: ["-c", "./main -host http://web"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4321"]
+      interval: 4s
+      timeout: 2s
+      retries: 10
 
   web:
     image: php:7.2-apache
