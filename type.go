@@ -10,19 +10,18 @@ type ProxyHandler struct {
 	target *url.URL
 }
 
-type CookieValue struct {
+type HTTPReqData struct {
 	Value string `json:"value"`
 	Place string `json:"place"`
 }
 
 type RequestMessage struct {
 	Name  string `json:"name"`
-	Value string `json:"value"`
-	Place string `json:"place"`
+	Value string `json:"value",omitempty`
+	Place string `json:"place",omitempty`
 }
 
 type ResponseMessage struct {
-	Status  int                     `json:"status"`
 	Message string                  `json:"message"`
-	Data    *map[string]CookieValue `json:"data,omitempty"`
+	Data    *map[string]HTTPReqData `json:"data,omitempty"`
 }

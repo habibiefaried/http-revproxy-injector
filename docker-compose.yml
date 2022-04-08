@@ -18,6 +18,8 @@ services:
       context: .
       dockerfile: Dockerfile.integration.test
     command: ["-c", "./main -host http://web"]
+    ports:
+      - "4321:4321"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4321"]
       interval: 4s
