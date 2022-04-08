@@ -1,0 +1,8 @@
+FROM golang:1.17-buster
+
+COPY . /workdir
+WORKDIR /workdir
+
+RUN go build -o main
+
+ENTRYPOINT ["/bin/bash"]
