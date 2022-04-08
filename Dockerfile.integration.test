@@ -3,6 +3,6 @@ FROM golang:1.17-buster
 COPY . /workdir
 WORKDIR /workdir
 
-RUN go build -o main
+RUN go build -o main && apt update && apt install -y sqlmap
 
 ENTRYPOINT ["/bin/bash"]

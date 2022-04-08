@@ -11,6 +11,8 @@ services:
     depends_on:
       revproxyinjector:
         condition: service_healthy
+      revproxydvwa:
+        condition: service_healthy
 
   revproxyinjector:
     container_name: revproxyinjector
@@ -26,7 +28,26 @@ services:
       timeout: 2s
       retries: 10
 
+  revproxydvwa:
+    container_name: revproxydvwa
+    build:
+      context: .
+      dockerfile: Dockerfile.integration.test
+    command: ["-c", "./main -host http://dvwa -port 4322"]
+    ports:
+      - "4322:4322"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4322"]
+      interval: 4s
+      timeout: 2s
+      retries: 10
+
   web:
     image: php:7.2-apache
     volumes:
       - ./__web__:/var/www/html
+
+  dvwa:
+    image: habibiefaried/dvwa-test
+    ports:
+      - "51280:80"

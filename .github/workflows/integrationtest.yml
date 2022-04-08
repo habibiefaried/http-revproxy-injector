@@ -27,4 +27,6 @@ jobs:
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             dep ensure
         fi
-        make test
+        docker-compose build
+        docker-compose up -d
+        docker exec unittest bash -c "GITHUB_RUN_ID=1 go test -p 1 -v ./..."
