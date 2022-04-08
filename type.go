@@ -15,6 +15,12 @@ type CookieValue struct {
 	Place string `json:"place"`
 }
 
+type RequestMessage struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+	Place string `json:"place"`
+}
+
 type ResponseMessage struct {
 	Status  int                     `json:"status"`
 	Message string                  `json:"message"`

@@ -4,16 +4,19 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 )
 
 var (
 	port         = flag.Int("port", 4321, "Running port")
 	host         = flag.String("host", "", "Target host")
 	injecteddata map[string]CookieValue
+	m            sync.RWMutex
 )
 
 func main() {
@@ -48,33 +51,58 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	switch r.Method {
 	case "GET":
-		json.NewEncoder(w).Encode(ResponseMessage{Status: 200, Message: "OK", Data: &injecteddata})
+		m.RLock()
+		defer func() {
+			m.RUnlock()
+		}()
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(ResponseMessage{Message: "OK", Data: &injecteddata})
 	case "POST":
-		name := r.FormValue("name")
-		value := r.FormValue("value")
-		place := r.FormValue("place")
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(ResponseMessage{Message: fmt.Sprintf("%v", err)})
+			return
+		}
+		var t RequestMessage
+		err = json.Unmarshal(body, &t)
+		if err != nil {
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(ResponseMessage{Message: fmt.Sprintf("%v", err)})
+			return
+		}
+
+		name := t.Name
+		value := t.Value
+		place := t.Place
 
 		if (name == "") || (value == "") {
-			json.NewEncoder(w).Encode(ResponseMessage{Status: 403, Message: "variable name and value must exist"})
+			w.WriteHeader(401)
+			json.NewEncoder(w).Encode(ResponseMessage{Message: "variable name and value must exist"})
 			return
 		}
 
 		if place == "" {
-			place = "cookie"
+			place = "header"
 		} else {
-			if (place != "cookie") && (place != "form") && (place != "query") {
-				json.NewEncoder(w).Encode(ResponseMessage{Status: 403, Message: "variable 'place' is incorrect, should be 'cookie' or 'form' or 'query'"})
+			w.WriteHeader(402)
+			if (place != "header") && (place != "form") && (place != "query") {
+				json.NewEncoder(w).Encode(ResponseMessage{Message: "variable 'place' is incorrect, should be 'header' or 'form' or 'query'"})
 				return
 			}
 		}
 
+		m.Lock()
 		injecteddata[name] = CookieValue{
 			Value: value,
 			Place: place,
 		}
+		m.Unlock()
 
-		json.NewEncoder(w).Encode(ResponseMessage{Status: 201, Message: "Data is injected"})
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(ResponseMessage{Message: "Data is injected"})
 	default:
+		w.WriteHeader(504)
 		fmt.Fprintf(w, "Sorry, only GET and POST methods are supported.")
 	}
 }
